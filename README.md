@@ -41,6 +41,21 @@ Otwórz w przeglądarce adres http://localhost:8080
 
 ## Zmiany
 
+## ZPE-Port 1.4
+
+- Dodano do `create` opcjonalny parametr konfiguracyjny `options`.
+- Dodano obsługę funkcji `isStateValidFn` w opcjach konfiguracyjnych.
+- Dodano obsługę funkcji `showStateValidationFn` w opcjach konfiguracyjnych.
+
+```typescript
+export interface ZpePortOptions {
+    isStateValidFn?: IsStateValidFn | null;
+    showStateValidationFn?: ShowStateValidationFn | null;
+}
+```
+
+Do działania funkcji `isStateValidFn` niezbędne jest dodanie do engine.json sekcji `"validation": "auto"`.
+
 ### Edytor 2.2
 
 - Poprawiono stylowanie elementów listy w edytorze.

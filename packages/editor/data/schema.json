@@ -78,7 +78,7 @@
                 }
             }
         },
-        "#rebuses": {
+        "rebuses": {
             "type": "array",
             "label": "Rebusy",
             "reorderable": true,
@@ -107,19 +107,20 @@
                         "path": "scenario.json#/rebuses/${id}/answer",
                         "label": "Odpowiedź"
                     },
-                    "refquestions": {
+                    "questionsByRefSimple": {
                         "type": "array",
-                        "label": "Pytania do rebusu - przez ref",
+                        "label": "Pytania do rebusu - odwołanie przez type ref - tablica id's",
                         "reorderable": true,
                         "editable": false,
+                        "helpFile": "help/help-file-test.md",
                         "item": {
                             "type": "id",
                             "path": "scenario.json#/questions/[{id:${id}}]/text"
                         }
                     },
-                    "questions": {
+                    "questionsByRefFull": {
                         "type": "array",
-                        "label": "Pytania do rebusu",
+                        "label": "Pytania do rebusu - odwołanie przez type ref - tablica obiektów z id",
                         "reorderable": true,
                         "editable": false,
                         "item": {
@@ -131,6 +132,23 @@
                                 "question": {
                                     "type": "ref",
                                     "path": "scenario.json#/questions/[{id:${id}}]/text"
+                                }
+                            }
+                        }
+                    },
+                    "questionsDirect": {
+                        "type": "array",
+                        "label": "Pytania do rebusu - wszystkie dane z engine.json (ZPE-DB)",
+                        "reorderable": true,
+                        "editable": true,
+                        "item": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "id"
+                                },
+                                "question": {
+                                    "type": "string"
                                 }
                             }
                         }

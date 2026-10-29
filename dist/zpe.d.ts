@@ -2,6 +2,8 @@ export type InitFn = (container: HTMLElement) => Promise<void>;
 export type RunFn = (stateData: Record<string, any> | null, isFrozen: boolean) => void;
 export type UnloadFn = () => Promise<void> | void;
 export type DestroyFn = () => Promise<void> | void;
+export type IsStateValidFn = (stateData: Record<string, any>) => boolean;
+export type ShowStateValidationFn = (isValidationVisible: boolean) => void;
 export interface Engine {
     init(container: Element, api: ExerciseApi, options: any): Promise<void>;
     destroy(container: Element): Promise<void>;
@@ -11,6 +13,8 @@ export interface Stateful {
     getState(): any;
     setStateFrozen(isFrozen: boolean): void;
     getStateProgress(data: Record<string, any>): Record<string, any>;
+    isStateValid(stateData: any): Boolean;
+    showStateValidation(isValidationVisible: Boolean): void;
 }
 interface ExerciseApi {
     triggerStateSave(): Promise<void>;
@@ -32,7 +36,11 @@ interface ExerciseApi {
     removeUploadedFile(fileId: string): Promise<void>;
     removeUploadedFiles(): Promise<void>;
 }
-declare function create(initFn: InitFn, runFn: RunFn, unloadFn: UnloadFn, destroyFn: DestroyFn): () => Engine & Stateful;
+export interface ZpePortOptions {
+    isStateValidFn?: IsStateValidFn | null;
+    showStateValidationFn?: ShowStateValidationFn | null;
+}
+declare function create(initFn: InitFn, runFn: RunFn, unloadFn: UnloadFn, destroyFn: DestroyFn, options?: ZpePortOptions): () => Engine & Stateful;
 declare function path(relativePath: string): string;
 declare function loadCss(relativePath: string): Promise<void>;
 declare function getData(): Record<string, any>;

@@ -2027,10 +2027,10 @@ class App extends Disposable {
         //     }
         // }
         if (this.modals.length > 0) {
-            this.pageContainer.attr("aria-hidden", "false");
             this.restoreModalFocus();
         }
         else {
+            this.pageContainer.attr("aria-hidden", "false");
             this.restorePageFocus();
         }
     }
@@ -2040,6 +2040,8 @@ class App extends Disposable {
             modal.dispose();
         }
         this.updateModals();
+        this.pageContainer.attr("aria-hidden", "false");
+        this.restorePageFocus();
     }
     getPageFocusableElements() {
         return this.currentPage?.element.querySelectorAll(FOCUSABLE_ELEMENT_SELECTOR);
@@ -2317,6 +2319,9 @@ class DOMNode extends Disposable {
         }
         return this;
     }
+    hasClass(className) {
+        return this._element.classList.contains(className);
+    }
     empty() {
         [...this._disposables].forEach(([key, dispose]) => {
             if (key instanceof DOMNode) {
@@ -2481,11 +2486,63 @@ class DOMNode extends Disposable {
         }
         return this;
     }
+    hasChildNodes() {
+        return this._element.hasChildNodes();
+    }
     get element() {
         return this._element;
     }
     get owner() {
         return this._owner;
+    }
+}
+function createText(owner = null, text) {
+    return TextNode.create(owner, text);
+}
+class TextNode extends Disposable {
+    _owner = null;
+    _textNode;
+    static create(owner = null, text) {
+        return new TextNode(owner, text);
+    }
+    constructor(owner = null, text) {
+        super();
+        this._owner = owner;
+        this._textNode = document.createTextNode(text);
+        if (this._owner) {
+            this._owner.register(this);
+        }
+    }
+    dispose() {
+        if (this._disposed)
+            return;
+        this._textNode.remove();
+        if (this._owner) {
+            this._owner.unregister(this);
+        }
+        super.dispose();
+    }
+    get element() {
+        return this._textNode;
+    }
+    mount(parent, options) {
+        if (parent instanceof DOMNode) {
+            if (options?.first) {
+                parent.element.insertBefore(this._textNode, parent.element.firstChild);
+            }
+            else {
+                parent.element.appendChild(this._textNode);
+            }
+        }
+        else {
+            if (options?.first) {
+                parent.insertBefore(this._textNode, parent.firstChild);
+            }
+            else {
+                parent.appendChild(this._textNode);
+            }
+        }
+        return this;
     }
 }
 

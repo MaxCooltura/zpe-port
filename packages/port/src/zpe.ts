@@ -1,7 +1,11 @@
+import packageJson from "../package.json";
+
 export type InitFn = (container: HTMLElement) => Promise<void>;
 export type RunFn = (stateData: Record<string, any> | null, isFrozen: boolean) => void;
 export type UnloadFn = () => Promise<void> | void;
 export type DestroyFn = () => Promise<void> | void;
+export type IsStateValidFn = (stateData: Record<string, any>) => boolean;
+export type ShowStateValidationFn = (isValidationVisible: boolean) => void;
 
 export interface Engine {
     init(container: Element, api: ExerciseApi, options: any): Promise<void>;
@@ -13,6 +17,9 @@ export interface Stateful {
     getState(): any;
     setStateFrozen(isFrozen: boolean): void;
     getStateProgress(data: Record<string, any>): Record<string, any>;
+
+    isStateValid(stateData: any): Boolean
+    showStateValidation(isValidationVisible: Boolean): void
 }
 
 interface ExerciseApi {
@@ -58,6 +65,11 @@ interface EngineOptions {
     [key: string]: any;
 }
 
+export interface ZpePortOptions {
+    isStateValidFn?: IsStateValidFn | null;
+    showStateValidationFn?: ShowStateValidationFn | null;
+}
+
 let _container: HTMLElement;
 let _exerciseApi: ExerciseApi;
 let _engineOptions: EngineOptions;
@@ -86,7 +98,9 @@ let _isRunning: boolean = false;
 // 1. Razem z funkcją init przekazywana jest kontener HTML. Tylko w nim aplikacja może tworzyć swoje elementy.
 // 2. Funkcja init musi zwracać Promise, który powinien się rozwiązać gdy aplikacja jest gotowa do użycia.
 // 3. Funkcja destroy jest wywoływana przy niszczeniu aplikacji i powinna posprzątać zasoby (usunąć elementy z DOM itp.)
-function create(initFn: InitFn, runFn: RunFn, unloadFn: UnloadFn, destroyFn: DestroyFn): () => Engine & Stateful {
+function create(initFn: InitFn, runFn: RunFn, unloadFn: UnloadFn, destroyFn: DestroyFn, options: ZpePortOptions = {}): () => Engine & Stateful {
+    console.log(logH(), "Version:", packageJson.version);
+
     if (!initFn) {
         throw new Error("Init function is required to create the engine.");
     }
@@ -189,9 +203,51 @@ function create(initFn: InitFn, runFn: RunFn, unloadFn: UnloadFn, destroyFn: Des
                 _isFrozen = value;
                 console.log(logH(), "Setting state frozen:", _isFrozen);
             },
+            // Oficjalnie tej metody nie ma w dokumentacji (API 2026.01) od ORE ale ZPE próbuje ją wywoływać, aby uzyskać postęp stanu
             getStateProgress(data: Record<string, any>): Record<string, any> {
                 console.log(logH(), "Getting state progress with data:", data);
                 return {};
+            },
+            // Sprawdza czy dla danych stateData zadanie mozna uznać za rozwiązane poprawnie.
+            // Jest wywoływana zaraz po getState (wg. ZPE jest to zapis danych - wywoływana jest metoda triggerStateSave, a ona wywołuje zwrotnie getState)
+            // jeżeli w engine.json jest "validation": "auto"
+            isStateValid(stateData: any): boolean {
+                console.log(logH(), "isStateValid called with:", stateData);
+
+                if (!_exerciseApi) {
+                    console.error(logH(), "You must call isStateValid after the engine is initialized.");
+                    return false;
+                }
+
+                if (options.isStateValidFn && typeof options.isStateValidFn === "function") {
+                    try {
+                        return options.isStateValidFn(stateData);
+                    } catch (e) {
+                        console.error(logH(), "Error during isStateValid:", e);
+                        return false;
+                    }
+                } else {
+                    console.warn(logH(), "isStateValid function is not provided.");
+                    return true; // Default to true if no validation function is provided
+                }
+            },
+            // Wywoływana jest po setState, aby pokazać lub ukryć walidację stanu w trybie nauczyciela
+            // przeglądającego wyniki ucznia
+            showStateValidation(isValidationVisible: boolean): void {
+                console.log(logH(), "showStateValidation called with:", isValidationVisible);
+
+                if (!_exerciseApi) {
+                    console.error(logH(), "You must call showStateValidation after the engine is initialized.");
+                    return;
+                }
+
+                if (options.showStateValidationFn && typeof options.showStateValidationFn === "function") {
+                    try {
+                        options.showStateValidationFn(isValidationVisible);
+                    } catch (e) {
+                        console.error(logH(), "Error during showStateValidation:", e);
+                    }
+                }
             }
         };
     };

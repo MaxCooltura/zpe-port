@@ -20,12 +20,12 @@
                     "id": "rebus1",
                     "enabled": true,
                     "style": "classic",
-                    "refquestions": [
+                    "questionsByRefSimple": [
                         "question1",
                         "question2",
                         "question3"
                     ],
-                    "questions": [
+                    "questionsByRefFull": [
                         {
                             "id": "question1"
                         },
@@ -34,6 +34,20 @@
                         },
                         {
                             "id": "question3"
+                        }
+                    ],
+                    "questionsDirect": [
+                        {
+                            "id": "question1",
+                            "question": "What is the capital of France?"
+                        },
+                        {
+                            "id": "question2",
+                            "question": "What is 2 + 2?"
+                        },
+                        {
+                            "id": "question3",
+                            "question": "What is the square root of 16?"
                         }
                     ]
                 },

@@ -1,3 +1,4 @@
+import packageJson from "../package.json";
 let _container;
 let _exerciseApi;
 let _engineOptions;
@@ -25,7 +26,8 @@ let _isRunning = false;
 // 1. Razem z funkcją init przekazywana jest kontener HTML. Tylko w nim aplikacja może tworzyć swoje elementy.
 // 2. Funkcja init musi zwracać Promise, który powinien się rozwiązać gdy aplikacja jest gotowa do użycia.
 // 3. Funkcja destroy jest wywoływana przy niszczeniu aplikacji i powinna posprzątać zasoby (usunąć elementy z DOM itp.)
-function create(initFn, runFn, unloadFn, destroyFn) {
+function create(initFn, runFn, unloadFn, destroyFn, options = {}) {
+    console.log(logH(), "Version:", packageJson.version);
     if (!initFn) {
         throw new Error("Init function is required to create the engine.");
     }
@@ -121,9 +123,50 @@ function create(initFn, runFn, unloadFn, destroyFn) {
                 _isFrozen = value;
                 console.log(logH(), "Setting state frozen:", _isFrozen);
             },
+            // Oficjalnie tej metody nie ma w dokumentacji (API 2026.01) od ORE ale ZPE próbuje ją wywoływać, aby uzyskać postęp stanu
             getStateProgress(data) {
                 console.log(logH(), "Getting state progress with data:", data);
                 return {};
+            },
+            // Sprawdza czy dla danych stateData zadanie mozna uznać za rozwiązane poprawnie.
+            // Jest wywoływana zaraz po getState (wg. ZPE jest to zapis danych - wywoływana jest metoda triggerStateSave, a ona wywołuje zwrotnie getState)
+            // jeżeli w engine.json jest "validation": "auto"
+            isStateValid(stateData) {
+                console.log(logH(), "isStateValid called with:", stateData);
+                if (!_exerciseApi) {
+                    console.error(logH(), "You must call isStateValid after the engine is initialized.");
+                    return false;
+                }
+                if (options.isStateValidFn && typeof options.isStateValidFn === "function") {
+                    try {
+                        return options.isStateValidFn(stateData);
+                    }
+                    catch (e) {
+                        console.error(logH(), "Error during isStateValid:", e);
+                        return false;
+                    }
+                }
+                else {
+                    console.warn(logH(), "isStateValid function is not provided.");
+                    return true; // Default to true if no validation function is provided
+                }
+            },
+            // Wywoływana jest po setState, aby pokazać lub ukryć walidację stanu w trybie nauczyciela
+            // przeglądającego wyniki ucznia
+            showStateValidation(isValidationVisible) {
+                console.log(logH(), "showStateValidation called with:", isValidationVisible);
+                if (!_exerciseApi) {
+                    console.error(logH(), "You must call showStateValidation after the engine is initialized.");
+                    return;
+                }
+                if (options.showStateValidationFn && typeof options.showStateValidationFn === "function") {
+                    try {
+                        options.showStateValidationFn(isValidationVisible);
+                    }
+                    catch (e) {
+                        console.error(logH(), "Error during showStateValidation:", e);
+                    }
+                }
             }
         };
     };
